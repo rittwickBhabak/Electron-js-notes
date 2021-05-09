@@ -5,7 +5,6 @@ const app = express();
 app.set('view engine', 'ejs');
 app.use(express.static('public'))
 
-app.listen();
 
 
 app.get('/:id', (req, res) => {
@@ -27,3 +26,6 @@ app.get('/:id', (req, res) => {
 app.get('/', (req, res) => {
     res.render('index');
 })
+
+const port = process.env.PORT || '5000';
+app.listen(port, () => console.log(`Server started on Port ${port}`));
