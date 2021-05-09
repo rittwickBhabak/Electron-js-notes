@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang='en'>
+
+<head>
+    <%- include('./partials/meta.ejs') %>
+    <title>Overview</title>
+    <%- include('./partials/style.ejs') %>
+    
+</head>
+
+<body class='line-numbers'>
+    <div class='container mt-3'>
+
+        <h1 class='text-center'>Chapter 1: Overview</h1>
+        <%- include('./partials/top_controls.ejs') %>
+        
+        <h2>Videos</h2>
+        <ol>
+            <h3><li>Introduction</li></h3> 
+            <div class="border p-3 mb-3">
+                
+            </div>
+            <h3><li>Lesson Structure</li></h3>
+            <div class="border p-3 mb-3">
+                <ol>
+                    <li>Install Electron</li>
+                    <li>Project Code</li>
+                    <a href="https://github.com/stackacademytv/master-electron">Git Hub Project Link</a>
+                    <li>Running App</li>
+                </ol>
+            </div>
+        </ol>
+
+        <%- include('./partials/bottom_controls.ejs') %>
+        
+    </div> 
+    <%- include('./partials/scripts.ejs') %>
+</body>
+
+</html>

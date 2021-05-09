@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang='en'>
+
+<head>
+    <%- include('./partials/meta.ejs') %>
+    <title>Renderer Process API</title>
+    <%- include('./partials/style.ejs') %>
+    
+</head>
+
+<body class='line-numbers'>
+    <div class='container mt-3'>
+
+        <h1 class='text-center'>Chapter 4: Renderer Process API</h1>
+        <%- include('./partials/top_controls.ejs') %>
+        
+        <h2>Videos</h2>
+        <ol>
+            <h3><li>Remote</li></h3> 
+            <div class='border p-3 mb-3 hide'>
+                <p>Remote <a href="https://www.electronjs.org/docs/api/remote">docs</a></p>
+                <p><b>webPreferences: { nodeIntegration: true }</b>: this thing allows to get node js access in browser window</p>
+                <p><b>require('./renderer.js');</b> is same as <b>&lt;script src="renderer.js"&gt;&lt;/script&gt;</b> inside index.html</p>
+
+                <p><b>electron.Remote</b> allows us the Main Processes in directly in the renderer process.</p>
+                <p>Unlike an real render process module <b>remote</b> communicates with the <b>main process</b> from the renderer.</p>
+
+                <p>Inspecting <b>remote</b> we can see that all of the main processes in implemented here as get method, not the acutal modules rather creating and <b>referencing</b> them in the main process.</p>
+
+                <p>When referencing an object that exists in the main process, that object won't be grabage collected untill it is destroyed in the renderer process as well.</p>
+
+                <p>The only objects that don't get referenced from the main process are arrays and buffers. This two data types get copied in the renderer process via the remote module, so these can not be updated directly to the main process.</p>
+
+                <p>An example to create a dialog </p>
+                <pre>
+                    <code class='language-js match-braces'>
+                        const { dialog } = require('electron').remote;
+
+                        const button = document.getElementById('test-button');
+                        
+                        button.addEventListener('click', ()=>{
+                            dialog.showMessageBox({message: 'Dialog invoked from renderer process'})
+                        })
+                        
+                    </code>
+                </pre>
+                <br>
+                <p>An example of creating a window from index.html</p>
+                <pre>
+                    <code class='language-js match-braces'>
+                        const { BrowserWindow } = require('electron').remote;
+
+                        const button = document.getElementById('test-button');
+                        
+                        function createWindow(){
+                            let secWin = new BrowserWindow({
+                                width: 400, height: 350,
+                                webPreferences: {
+                                    nodeIntegration: true
+                                }
+                            })
+                            secWin.loadFile('index.html');
+                            secWin.on('close', ()=>{
+                                secWin = null;
+                            })
+                        }
+                        
+                        button.addEventListener('click', ()=>{
+                            createWindow();
+                        })
+                        
+                    </code>
+                </pre>
+                <p>Accessing global object from index.html</p>
+                <pre>
+                    <code class='language-js match-braces'>
+                        const remote = require('electron').remote;
+
+                        const button = document.getElementById('test-button');
+                        
+                        button.addEventListener('click', ()=>{
+                            console.log(remote.getGlobal('myglob'))
+                        })
+                    </code>
+                </pre>
+
+                <p>An exmaple to maximize the current window</p>
+                <pre>
+                    <code class='language-js match-braces'>
+                        button.addEventListener('click', ()=>{
+                            let win = remote.getCurrentWindow();
+                            win.maximize();
+                        })
+                    </code>
+                </pre>
+            </div>
+            <h3><li>BrowserWindowProxy</li></h3> 
+            <div class='border p-3 mb-3 hide'>
+                <p>BrowserWindowProxy <a href="https://electronjs.org/docs/api/browser-window-proxy">docs</a></p>
+                <p>Open-window <a href="https://www.electronjs.org/docs/api/window-open">docs</a></p>
+                <p><b>BrowserWindowProxy</b> is a class</p>
+                <p>If we click on a link to which something opens in new window, then we have no reference to that window and for that we can not control the window.</p>
+                <p>To have a control the new windows behaviour we've to use the following:</p>
+                <pre>
+                    <code class='language-js match-braces'>
+                        &lt;body&gt;
+                            &lt;h2&gt;Hello world&lt;/h2&gt;
+                            
+                            
+                            &lt;p&gt;&lt;a href="#" onclick="newWin()"&gt;New Window&lt;/a&gt;&lt;/p&gt;
+                            &lt;p&gt;&lt;a href="#" onclick="closeWin()"&gt;Close Window&lt;/a&gt;&lt;/p&gt;
+                            &lt;p&gt;&lt;a href="#" onclick="styleWin()"&gt;Style Window&lt;/a&gt;&lt;/p&gt;
+                          
+                          
+                            &lt;script&gt;
+                              let win;
+                          
+                              function newWin(){
+                                win = window.open('https://electronjs.org', "_blank", 'height=500,width=500,alwaysOnTop=1,frame=0')
+                              }
+                              function closeWin(){
+                                win.close();
+                              }
+                              function styleWin(){
+                                win.eval("document.getElementsByTagName('body')[0].style.fontFamily='Comic Sans MS'")
+                              }
+                            &lt;/script&gt;
+                          &lt;/body&gt;
+                    </code>
+                </pre>
+                <p>Notice line 14, where the third argumet is used to control the behaviour of the window. second argument is title on the new window and first argument is the source of the new window.</p>
+            </div>
+            <h3><li>WebFrame</li></h3> 
+            <div class='border p-3 mb-3 hide'>
+                <p>WebFrame <a href="https://www.electronjs.org/docs/api/web-frame">docs</a></p>
+                <p>
+                    Main process controls the BrowserWindow instances. <br>
+                    The BrowserWindow instance controls the webFrames. <br>
+                    BrowserWindow instance creates a webFrame in which to load webContents.
+                </p>
+                <p>An exampl to increase/decrease zoom factor</p>
+                <pre>
+                    <code class='language-js match-braces'>
+                        &lt;body&gt;
+                        &lt;h2&gt;Hello world&lt;/h2&gt;
+                        
+                        &lt;img src="https://placekitten.com/450/300" alt=""&gt;
+                      
+                        &lt;button onclick="zoomUp()"&gt;Increse Zoom&lt;/button&gt;
+                        &lt;button onclick="zoomDown()"&gt;Decrese Zoom&lt;/button&gt;
+                        &lt;button onclick="zoomReset()"&gt;Reset Zoom&lt;/button&gt;
+                      
+                      
+                        &lt;script&gt;
+                          const { webFrame } = require('electron');
+                      
+                          window.wf = webFrame;
+                      
+                          // console.log(wf.getZoomFactor())
+                          // console.log(wf.getZoomLevel());
+                      
+                          const zoomUp = () =&gt; {
+                            let currentZoomFactor = webFrame.getZoomFactor()
+                            webFrame.setZoomFactor( currentZoomFactor + 0.1);
+                          }
+                          const zoomDown = () =&gt; {
+                            let currentZoomFactor = webFrame.getZoomFactor()
+                            webFrame.setZoomFactor( currentZoomFactor - 0.1);
+                          }
+                          const zoomReset = () =&gt; {
+                            webFrame.setZoomFactor(1)
+                          }
+                        &lt;/script&gt;
+                      &lt;/body&gt;
+                    </code>
+                </pre>
+            </div>
+            <h3><li>DesktopCapturer</li></h3> 
+            <div class='border p-3 mb-3 hide'>
+                <p>DesktopCapturer <a href="https://www.electronjs.org/docs/api/desktop-capturer">docs</a></p>
+                <p>It is an electron module wrapper for the html5 media devices api, allows us access screen, monitor windows.</p>
+                <pre>
+                    <code class='language-js match-braces'>
+                        const { desktopCapturer } = require('electron');
+
+                        document.getElementById('screenshot-button').addEventListener('click', ()=>{
+                            desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 1920, height: 1080}}, (err, sources)=>{
+                                document.getElementById('screenshot').src = sources[1].thumbnail.toDataURL()
+                            })
+                        })
+                    </code>
+                </pre>
+            </div>
+            
+        </ol>
+
+        <%- include('./partials/bottom_controls.ejs') %>
+        
+    </div> 
+    <%- include('./partials/scripts.ejs') %>
+</body>
+
+</html>

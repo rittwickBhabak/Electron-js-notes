@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang='en'>
+
+<head>
+    <%- include('./partials/meta.ejs') %>
+    <title>IPC Communication</title>
+    <%- include('./partials/style.ejs') %>
+    
+</head>
+
+<body class='line-numbers'>
+    <div class='container mt-3'>
+
+        <h1 class='text-center'>Chapter 5: IPC Communication</h1>
+        <%- include('./partials/top_controls.ejs') %>
+        
+        <h2>Videos</h2>
+        <ol>
+            <h3><li>ipcMain and ipcRenderer</li></h3> 
+            <div class='border p-3 mb-3 hide'>
+                <p>IPC messaging modules are used to communicate between main and renderer processes.</p>
+                <p>IPC stands for Inter-Process Communication.</p>
+                <p>This is what the remote module uses to communicate with the main process from the renderer.</p>
+                <p>Electron provides us two modules for IPC messaging.</p>
+                <p>ipcMain for handling the main process and ipcRenderer for using the renderer process.</p>
+
+                <br>
+                <p>Sending message from renderer window to main process:</p>
+                <pre>
+                    <code class='language-js match-braces'>
+                    // In main.js
+                    ipcMain.on('channel1', (e, args) => {
+                        console.log(args);
+                    })
+                    </code>
+                </pre>
+                <pre>
+                    <code class='language-js match-braces'>
+                    // In index.html's renderer.js 
+                    const { ipcRenderer }  = require('electron');
+
+                    document.getElementById('talk').addEventListener('click', e=>{
+                        ipcRenderer.send('channel1', 'Hello from main window');
+                    })
+                    </code>
+                </pre>
+                <br><br>
+                <p>By default IPC Messaging in electron is <b>Asynchronous</b>, i.e. there is no waiting for response, no return value.</p>
+                <p>
+                    To respond to the message which came from renderer process, from main process, <br>
+                    Step 1 is to identify from where the message came from <br>
+                </p>
+                <pre>
+                    <code class='language-js match-braces'>
+                        ipcMain.on('channel1', (e, args) => {
+                            e.sender
+                        })
+                    </code>
+                </pre>
+                <b>sender</b> being the webContents instance of the sending browserWindow.
+                <p>Sending 'Message recieved. Thank You!' message to the e.sender:</p>
+                <pre>
+                    <code class='language-js match-braces'>
+                        ipcMain.on('channel1', (e, args) => {
+                            e.sender.send('channel1-response', 'Message recieved. Thank You!')
+                        })
+                    </code>
+                </pre>
+                <p>Now we've to implement a listener in the renderer process: </p>
+                <pre>
+                    <code class='language-js match-braces'>
+                        ipcRenderer.on('channel1-response', (e, args)=>{
+                            console.log(args);
+                        })
+                    </code>
+                </pre>
+                <p>Now to directly send any message to renderer process from main process:</p>
+                <p><b>e.sender</b> is the webContents instance. We can use it to send direct message(i.e. message, which is not a reply) but for that we've to wait till the webContents load is finished.</p>
+                <pre>
+                    <code class='language-js match-braces'>
+                        function createWindow() {
+
+                            mainWindow = new BrowserWindow({
+                              width: 500, height: 800, x:2100, y:140, 
+                              webPreferences: { nodeIntegration: true }
+                            }) 
+                          
+                            mainWindow.loadFile('index.html');
+                          
+                            mainWindow.webContents.on('did-finish-load', e => {
+                              mainWindow.webContents.send('mailbox', 'You have mail');         
+                            })
+
+                            mainWindow.on('closed', () => {
+                              mainWindow = null
+                            })
+                          
+                          }
+                    </code>
+                </pre>
+                <br>
+                <p><b>Synchronous </b> IPC Messaging</p>
+                <p>In <b>main.js</b>:</p>
+                <pre>
+                    <code class='language-js match-braces'>
+                        ipcMain.on('sync-message', (e, args) => {
+                            console.log(args);
+                              e.returnValue = 'You are nice.'
+                        })
+                    </code>
+                </pre>
+                <p>In <b>renderer.js</b>:</p>
+                <pre>
+                    <code class='language-js match-braces'>
+                        const { ipcRenderer }  = require('electron');
+
+                        document.getElementById('talk').addEventListener('click', e=>{
+                            let response = ipcRenderer.sendSync('sync-message', 'Waiting for response');
+                            console.log(response);
+                        })                        
+                    </code>
+                </pre>
+            </div>
+
+        </ol>
+
+        <%- include('./partials/bottom_controls.ejs') %>
+        
+    </div> 
+    <%- include('./partials/scripts.ejs') %>
+</body>
+
+</html>
