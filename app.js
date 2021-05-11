@@ -13,7 +13,7 @@ app.get('/:id', (req, res) => {
         // console.log('next'+id);
         res.render(`chapter_${id}`, { next: +id + 1, prev: null });
     }
-    else if (id == 11) {
+    else if (id == 25){
         // console.log('prev'+id);
         res.render(`chapter_${id}`, { prev: +id - 1, next: null });
     }
